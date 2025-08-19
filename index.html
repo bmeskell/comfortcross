@@ -1,293 +1,396 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Comfort Cross — Lines Trainer</title>
-  <style>
-    :root {
-      --bg: #0b1020; --card:#0f1530; --ink:#e6ecff; --muted:#9fb0ff; --accent:#8be9fd; --ok:#86efac; --warn:#fde047; --bad:#fca5a5;
-    }
-    *{box-sizing:border-box}
-    body {margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#0b1020,#0b1228 40%,#0b1020); color:var(--ink)}
-    header{padding:18px 20px; display:flex; gap:14px; align-items:center; justify-content:space-between; border-bottom:1px solid #223}
-    .title{font-weight:800; letter-spacing:.5px}
-    .wrap{max-width:980px; margin:0 auto; padding:18px}
-    .row{display:flex; gap:16px; flex-wrap:wrap}
-    .card{background:var(--card); border:1px solid #22344a; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .card h2{margin:0 0 10px; font-size:18px; color:var(--muted)}
-    .controls .card{flex:1 1 280px}
-    .trainer{margin-top:18px}
-    textarea, input[type="text"], input[type="number"], button, select {width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a3558; background:#0b1228; color:var(--ink)}
-    textarea{min-height:120px; font-size:14px}
-    button{cursor:pointer; font-weight:700; transition:.15s transform ease, .15s background ease}
-    button:hover{transform:translateY(-1px)}
-    .btn-row{display:flex; gap:10px; flex-wrap:wrap}
-    .bigline{min-height:140px; white-space:pre-wrap; font-size:18px; line-height:1.55; background:#0a1024; padding:18px; border-radius:14px}
-    .cue{color:var(--muted); font-size:14px}
-    .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #2a3558; border-radius:999px; font-size:12px; color:var(--muted)}
-    .score{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .score .pill.ok{border-color:#1f3; color:var(--ok)}
-    .score .pill.bad{border-color:#933; color:var(--bad)}
-    .meter{height:10px; background:#101634; border-radius:999px; overflow:hidden; border:1px solid #243}
-    .bar{height:100%; width:0%; background:linear-gradient(90deg,#60a5fa,#22d3ee); transition:width .25s ease}
-    .small{font-size:12px; color:#b7c3ff}
-    .hint{color:#c7d2fe}
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0b1228; border:1px solid #2a3558; padding:3px 6px; border-radius:8px}
-    .footer{opacity:.7; font-size:12px; padding:20px; text-align:center}
-    .flex{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Comfort Cross — Lines Trainer</title>
+<style>
+  :root { --bg:#0f1221; --panel:#1a1f3d; --text:#f2f4ff; --muted:#aeb6ff; --accent:#9aa7ff; --ok:#35d07f; --bad:#ff6b6b; }
+  html,body { height:100%; margin:0; font-family:system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width:980px; margin:0 auto; padding:24px; }
+  h1 { margin:0 0 16px; font-size:clamp(20px, 3.8vw, 36px); letter-spacing:.3px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 16px; }
+  .bar > * { background:var(--panel); border:1px solid #2a2f57; color:var(--text); padding:8px 10px; border-radius:8px; font-size:14px; }
+  select, input[type="file"] { padding:6px 8px; }
+  button { cursor:pointer; transition:.15s transform ease; }
+  button:active { transform:translateY(1px); }
+  .pill { padding:6px 10px; background:#101639; border:1px solid #2a2f57; border-radius:999px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:1fr; gap:12px; }
+  .card { background:var(--panel); border:1px solid #2a2f57; border-radius:12px; padding:18px; }
+  .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
+  .cue { font-size:clamp(16px, 2.5vw, 22px); margin:6px 0 2px; }
+  .answer { white-space:pre-wrap; font-size:clamp(16px, 2.3vw, 20px); line-height:1.6; }
+  .inputRow { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start; }
+  textarea, input[type="text"] { width:100%; padding:12px; background:#0c1030; border:1px solid #2a2f57; color:var(--text); border-radius:10px; }
+  .btnRow { display:flex; gap:8px; flex-wrap:wrap; }
+  .ok { background:#0e2a1e; border-color:#2e6a4e; }
+  .bad { background:#2a1010; border-color:#6a2e2e; }
+  .flash { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); padding:10px 14px; border-radius:10px; border:1px solid #2a2f57; background:var(--panel); color:var(--text); box-shadow:0 6px 24px rgba(0,0,0,.35); display:none; }
+  .tiny { font-size:12px; color:var(--muted); }
+  .muted { color:var(--muted); }
+  a { color:var(--accent); }
+</style>
 </head>
 <body>
-  <header>
-    <div class="title">Comfort Cross — Lines Trainer</div>
-    <div class="score">
-      <span class="pill" id="modePill">Mode: Flashcard</span>
-      <span class="pill" id="progressPill">0 / 0</span>
-      <span class="pill ok" id="accPill">Accuracy — 100%</span>
+  <div class="wrap">
+    <h1>Comfort Cross — Lines Trainer</h1>
+
+    <div class="bar">
+      <span class="pill" id="progress">0 / 0</span>
+      <select id="mode">
+        <option value="type">Type‑to‑Check (fuzzy)</option>
+        <option value="flash">Flashcard</option>
+        <option value="cloze">Cloze (hide words)</option>
+      </select>
+
+      <!-- JSON Import / Export -->
+      <input type="file" id="importFile" accept="application/json" />
+      <button id="exportBtn" title="Export current deck JSON">Export JSON</button>
+
+      <!-- TTS -->
+      <button id="speakBtn" title="Speak current answer">🔈 Speak</button>
+      <span class="tiny">Tip: Import <em>comfort_lines_fuzzy.json</em> then choose “Type‑to‑Check (fuzzy)”.</span>
     </div>
-  </header>
 
-  <main class="wrap">
-    <section class="row controls">
-      <div class="card" style="flex:2 1 420px">
-        <h2>1) Paste or import your Comfort Cross lines</h2>
-        <p class="small">Format: one card per line. Use <strong>cue :: line</strong>. (Cue can be a few prompt words, the line before yours, or a memory anchor.)</p>
-        <textarea id="linesInput"></textarea>
-        <div class="btn-row" style="margin-top:8px">
-          <button id="loadSample">Load sample</button>
-          <button id="saveSet">Save set</button>
-          <button id="exportSet">Export JSON</button>
-          <input type="file" id="importFile" accept="application/json" style="width:auto">
+    <!-- Paste box (optional) -->
+    <div class="card">
+      <div class="label">Optional: paste lines (one per line) as <code>cue :: line</code>, then “Load from Paste”</div>
+      <div class="inputRow" style="margin-top:8px">
+        <textarea id="pasteBox" rows="4" placeholder="Erasmus asks about pain :: I have felt naught but joy these seventeen years!..."></textarea>
+      </div>
+      <div class="btnRow" style="margin-top:8px">
+        <button id="loadFromPaste">Load from Paste</button>
+        <button id="clearAll">Clear Deck</button>
+      </div>
+    </div>
+
+    <!-- Trainer UI -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <div class="label">Cue</div>
+        <div class="cue" id="cue">—</div>
+      </div>
+
+      <div class="card" id="typeBox">
+        <div class="label">Your answer</div>
+        <div class="inputRow">
+          <textarea id="answerInput" rows="5" placeholder="Type your line here…"></textarea>
+        </div>
+        <div class="btnRow" style="margin-top:8px">
+          <button id="checkBtn">Check</button>
+          <button id="revealBtn">Reveal</button>
+          <button id="againBtn">Again</button>
+          <button id="goodBtn">Good</button>
+          <span class="tiny muted">Enter = Check • Space = Reveal • A = Again • G = Good</span>
+        </div>
+        <div class="label" style="margin-top:12px">Correct line</div>
+        <div class="answer" id="correctAnswer">—</div>
+        <div class="tiny muted" id="scoreLine">—</div>
+      </div>
+
+      <div class="card" id="flashBox" style="display:none">
+        <div class="label">Flashcard</div>
+        <div class="answer" id="flashAnswer" style="margin-top:6px">—</div>
+        <div class="btnRow" style="margin-top:8px">
+          <button id="flashReveal">Reveal</button>
+          <button id="flashAgain">Again</button>
+          <button id="flashGood">Good</button>
         </div>
       </div>
-      <div class="card" style="flex:1 1 260px">
-        <h2>2) Choose mode & options</h2>
-        <label class="small">Study mode</label>
-        <select id="mode">
-          <option value="flash">Flashcard (show → recall)</option>
-          <option value="type">Type-to-Check (fuzzy)</option>
-          <option value="cloze">Cloze (hide 20% of words)</option>
-          <option value="listen">Listen & Repeat (TTS)</option>
-        </select>
-        <label class="small" style="margin-top:10px; display:block">Shuffle</label>
-        <select id="shuffle">
-          <option value="on">On</option>
-          <option value="off">Off</option>
-        </select>
-        <label class="small" style="margin-top:10px; display:block">Target accuracy before next</label>
-        <input type="number" id="targetAcc" min="80" max="100" value="92" />
-        <div class="btn-row" style="margin-top:10px">
-          <button id="startBtn">Start Training</button>
-          <button id="resetStats">Reset Stats</button>
+
+      <div class="card" id="clozeBox" style="display:none">
+        <div class="label">Cloze (fill‑in)</div>
+        <div class="answer" id="clozeMasked" style="margin:6px 0 8px">—</div>
+        <textarea id="clozeInput" rows="3" placeholder="Type the missing words…"></textarea>
+        <div class="btnRow" style="margin-top:8px">
+          <button id="clozeCheck">Check</button>
+          <button id="clozeReveal">Reveal</button>
+          <button id="clozeAgain">Again</button>
+          <button id="clozeGood">Good</button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="trainer card">
-      <h2>Trainer</h2>
-      <div class="cue" id="cueText">Load a set and press Start.</div>
-      <div id="lineBox" class="bigline" aria-live="polite"></div>
+    <p class="tiny muted" style="margin-top:12px">
+      JSON format: <code>[{"cue":"Self cue: I have felt…","line":"I have felt naught but joy these seventeen years! …"}, …]</code>
+    </p>
+  </div>
 
-      <div id="typeWrap" style="margin-top:12px; display:none">
-        <input type="text" id="typeInput" placeholder="Type your line here and press Enter…" />
-      </div>
-
-      <div class="btn-row" style="margin-top:12px">
-        <button id="revealBtn">Reveal / Next</button>
-        <button id="againBtn">Again</button>
-        <button id="goodBtn">Good</button>
-        <button id="speakBtn">🔊 Speak</button>
-      </div>
-
-      <div class="flex" style="margin-top:10px">
-        <div style="flex:1">
-          <div class="meter"><div class="bar" id="accBar"></div></div>
-        </div>
-        <div class="small hint">Hints: <span class="kbd">Space</span> reveal • <span class="kbd">Enter</span> submit • <span class="kbd">A</span>/<span class="kbd">G</span> again/good • <span class="kbd">S</span> speak</div>
-      </div>
-    </section>
-
-    <div class="footer">Single-file tool — drop into a GitHub Pages repo and go. • Your data is saved locally in your browser.</div>
-  </main>
+  <div class="flash" id="flash">—</div>
 
 <script>
-// ---------- Utilities ----------
-function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
-function levenshtein(a,b){ // iterative DP
-  a=a.toLowerCase(); b=b.toLowerCase();
-  const m=a.length, n=b.length; const dp=new Array(n+1);
-  for(let j=0;j<=n;j++) dp[j]=j;
-  for(let i=1;i<=m;i++){
-    let prev=dp[0]; dp[0]=i;
-    for(let j=1;j<=n;j++){
-      const temp=dp[j];
-      const cost = a[i-1]===b[j-1]?0:1;
-      dp[j] = Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
-      prev=temp;
+(() => {
+  // --------- State ---------
+  let cards = [];       // [{cue, line}]
+  let idx = 0;
+  let correct = 0;
+  let total = 0;
+  let showAnswer = false;
+
+  const $ = sel => document.querySelector(sel);
+  const modeSel = $('#mode');
+  const cueEl = $('#cue');
+  const ansIn = $('#answerInput');
+  const corrEl = $('#correctAnswer');
+  const scoreLine = $('#scoreLine');
+  const progress = $('#progress');
+  const speakBtn = $('#speakBtn');
+
+  // Boxes for modes
+  const typeBox = $('#typeBox');
+  const flashBox = $('#flashBox');
+  const clozeBox = $('#clozeBox');
+
+  // Cloze elements
+  const clozeMasked = $('#clozeMasked');
+  const clozeInput = $('#clozeInput');
+
+  // Flash elements
+  const flashAnswer = $('#flashAnswer');
+
+  // Flash banner
+  const flashBar = $('#flash');
+  function flash(msg, cls='') {
+    flashBar.textContent = msg;
+    flashBar.style.display = 'block';
+    flashBar.style.borderColor = cls==='ok' ? '#2e6a4e' : (cls==='bad' ? '#6a2e2e' : '#2a2f57');
+    flashBar.style.background = cls==='ok' ? '#0e2a1e' : (cls==='bad' ? '#2a1010' : 'var(--panel)');
+    setTimeout(() => { flashBar.style.display = 'none'; }, 1300);
+  }
+
+  // --------- Persistence ---------
+  const LS_KEY = 'comfort-trainer-v1';
+  function persist() {
+    localStorage.setItem(LS_KEY, JSON.stringify({cards, idx, correct, total}));
+  }
+  function restore() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (Array.isArray(s.cards)) {
+        cards = s.cards;
+        idx = s.idx||0; correct = s.correct||0; total = s.total||0;
+      }
+    } catch {}
+  }
+
+  // --------- Utilities ---------
+  function sanitize(s){ return (s||'').replace(/\s+/g,' ').trim(); }
+  function words(s){ return sanitize(s).toLowerCase().split(' '); }
+
+  // Levenshtein distance (iterative w/ two rows)
+  function lev(a,b){
+    a = sanitize(a).toLowerCase();
+    b = sanitize(b).toLowerCase();
+    const m=a.length, n=b.length;
+    if(!m) return n; if(!n) return m;
+    let prev = new Array(n+1), cur = new Array(n+1);
+    for(let j=0;j<=n;j++) prev[j]=j;
+    for(let i=1;i<=m;i++){
+      cur[0]=i;
+      for(let j=1;j<=n;j++){
+        const cost = a[i-1]===b[j-1]?0:1;
+        cur[j] = Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
+      }
+      [prev,cur]=[cur,prev];
+    }
+    return prev[n];
+  }
+  function sim(a,b){
+    const A = sanitize(a), B = sanitize(b);
+    const L = Math.max(A.length, B.length) || 1;
+    return 1 - (lev(A,B) / L); // 0..1
+  }
+  function maskCloze(line){
+    // Hide ~30% of words (every 3rd, skipping tiny words)
+    const ws = line.split(/\s+/);
+    return ws.map((w,i)=>{
+      const bare = w.replace(/[^\w’'-]/g,'');
+      if (bare.length<=3) return w;
+      return (i%3===0) ? w.replace(/[A-Za-z’]/g,'_') : w;
+    }).join(' ');
+  }
+
+  // --------- Deck ops ---------
+  function updateProgress(){
+    progress.textContent = `${Math.min(idx+1, cards.length)} / ${cards.length}`;
+  }
+  function current(){ return cards[idx] || {cue:'—', line:'—'}; }
+  function next(again=false){
+    // Simple spaced repetition: wrong goes +2 ahead; right goes to end
+    if (cards.length===0) return;
+    const card = cards[idx];
+    // Remove current
+    cards.splice(idx, 1);
+    if (again) {
+      const insertAt = Math.min(cards.length, Math.max(idx+2, 2));
+      cards.splice(insertAt, 0, card);
+    } else {
+      cards.push(card); // good -> end
+    }
+    idx = Math.min(idx, cards.length-1);
+    persist();
+    showCard();
+  }
+
+  // --------- Render ---------
+  function showCard(){
+    const c = current();
+    cueEl.textContent = c.cue || '—';
+    updateProgress();
+    scoreLine.textContent = `${correct} correct out of ${total} attempts`;
+    const m = modeSel.value;
+
+    typeBox.style.display  = (m==='type') ? '' : 'none';
+    flashBox.style.display = (m==='flash') ? '' : 'none';
+    clozeBox.style.display = (m==='cloze') ? '' : 'none';
+
+    // Reset displays
+    corrEl.textContent = showAnswer ? c.line : '—';
+    ansIn.value = '';
+    flashAnswer.textContent = showAnswer ? c.line : '—';
+
+    if (m==='cloze') {
+      clozeInput.value = '';
+      clozeMasked.textContent = maskCloze(c.line);
     }
   }
-  return dp[n];
-}
-function wordCloze(text, hideRatio=.2){
-  const words=text.split(/(\s+)/); // keep spaces
-  const realIdx = words.map((w,i)=>(/\w/.test(w)?i:null)).filter(i=>i!=null);
-  const toHide = Math.max(1, Math.floor(realIdx.length*hideRatio));
-  const hidden = new Set(shuffle([...realIdx]).slice(0,toHide));
-  return words.map((w,i)=> hidden.has(i) && /\w/.test(w)? "_".repeat(Math.min(8,w.length)) : w).join("");
-}
-function speak(text){
-  const u = new SpeechSynthesisUtterance(text); u.rate=1.0; u.pitch=1.0; u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);
-}
 
-// ---------- Data ----------
-let cards = [];
-let idx = 0; let correct=0, total=0; let targetAcc = 0.92; let mode='flash'; let showAnswer=false;
-
-function parseInput(raw){
-  return raw.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(line=>{
-    const [cue, ...rest] = line.split("::");
-    return {cue: (cue||'Cue').trim(), line: rest.join('::').trim()};
-  }).filter(o=>o.line);
-}
-
-function loadSample(){
-  const sample = [
-    "Audience sees Comfort :: Oh come now, it’s not so serious as all that! Be well my children, and may the Spirit breathe its blessing on you all! My name is Comfort Cross… rejoice that at last, he, and you, and all of us, may be made new! Oh blessed, blessed are we all!",
-    "Erasmus asks about pain :: I have felt naught but joy these seventeen years! Joy that at last, I have found true salvation…",
-    "Display of decay vs joy :: Yet the more and more—and MORE—my flesh fail me, the more I feel my spirit flying free as a prairie wind!",
-    "Locust terror :: When I was a little girl, I witnessed countless lives destroyed by these dread devourers… You’d find them everywhere… oh, how they made it so one could never feel quite clean!",
-    "Father Winfried :: He was a preacher… called the farmers together… Comfort first among them… said I possessed a certain frailty… but I always knowed I was afflicted of something divine.",
-    "Croatan Sound :: I came to the shores of Croatan Sound… angels’ song all around… the willow, mightier and older than stone… I knowed it was to be my ministry.",
-    "Offer of the flesh :: Behold the holy relic! It was with my lung I first breathed the pure, true breath of the Spirit… Would you be joined with me?",
-    "Cosmic vision :: I walked to the sun… descended to the profane necropolis… kissed the shells of dead stars… all is innocence! Sin and salvation, death and life, all is one!",
-    "To Erasmus — release pain :: My child, you want to know what it feels like? To be free from pain?",
-  ].join("\n");
-  document.getElementById('linesInput').value = sample;
-}
-
-function persist(){
-  localStorage.setItem('comfort_cards', JSON.stringify(cards));
-}
-function restore(){
-  const raw = localStorage.getItem('comfort_cards');
-  if(raw){ try{ cards = JSON.parse(raw);}catch{cards=[]} }
-  updatePills();
-}
-
-// ---------- Trainer ----------
-function updatePills(){
-  document.getElementById('progressPill').textContent = `${cards.length?idx+1:0} / ${cards.length}`;
-  const acc = total? Math.round(100*correct/total):100;
-  document.getElementById('accPill').textContent = `Accuracy — ${acc}%`;
-  document.getElementById('accBar').style.width = `${acc}%`;
-  document.getElementById('modePill').textContent = `Mode: ${{
-    flash:'Flashcard', type:'Type', cloze:'Cloze', listen:'Listen'
-  }[mode]}`;
-}
-function showCard(){
-  if(!cards.length){document.getElementById('cueText').textContent='Load a set and press Start.'; document.getElementById('lineBox').textContent=''; return}
-  const c = cards[idx];
-  document.getElementById('cueText').textContent = `Cue: ${c.cue}`;
-  const box = document.getElementById('lineBox');
-  if(mode==='flash' || mode==='listen'){
-    box.textContent = showAnswer? c.line : '✧ Press Reveal to show the line';
-  } else if(mode==='type'){
-    box.textContent = 'Type the full line below and press Enter';
-  } else if(mode==='cloze'){
-    box.textContent = showAnswer? c.line : wordCloze(c.line, .22);
+  // --------- Mode handlers ---------
+  function checkTyped(){
+    const c = current();
+    const user = ansIn.value;
+    const s = sim(user, c.line);
+    total++;
+    if (s >= 0.88) { // ~12% edit wiggle room
+      correct++;
+      flash(`✓ ${Math.round(s*100)}% match`, 'ok');
+      next(false);
+    } else {
+      flash(`✗ ${Math.round(s*100)}% — try Again or Reveal`, 'bad');
+      showAnswer = true;
+      corrEl.textContent = c.line;
+      persist();
+      showCard();
+    }
   }
-  document.getElementById('typeWrap').style.display = (mode==='type')? 'block':'none';
-  updatePills();
-}
-function nextCard(again=false){
-  if(again){ // simple spaced repetition: reinsert a few ahead
-    const c = cards.splice(idx,1)[0];
-    const pos = Math.min(cards.length, idx + 3 + Math.floor(Math.random()*3));
-    cards.splice(pos,0,c);
-  } else {
-    idx = (idx+1) % cards.length;
+
+  function speak(text){
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      u.pitch = 1.0;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch {}
   }
-  showAnswer=false; showCard();
-}
 
-function checkTyped(){
-  const input = document.getElementById('typeInput');
-  const guess = (input.value||'').trim(); const target = cards[idx].line.trim();
-  if(!guess){return}
-  total++;
-  const dist = levenshtein(guess, target);
-  const maxLen = Math.max(guess.length, target.length);
-  const similarity = 1 - (dist / Math.max(1,maxLen));
-  const ok = similarity >= targetAcc;
-  if(ok){ correct++; flash('Great! ✓', 'ok'); nextCard(false); }
-  else { flash(`Close… ${(similarity*100|0)}%`, 'bad'); nextCard(true); }
-  input.value=''; updatePills();
-}
-function flash(msg, kind='ok'){
-  const pill = document.createElement('div'); pill.className='pill '+(kind==='ok'?'ok':'bad'); pill.textContent=msg; pill.style.position='fixed'; pill.style.bottom='18px'; pill.style.right='18px'; pill.style.zIndex=50; document.body.appendChild(pill);
-  setTimeout(()=> pill.remove(), 1200);
-}
+  // --------- Wiring: Buttons ---------
+  $('#checkBtn').addEventListener('click', checkTyped);
+  $('#revealBtn').addEventListener('click', () => { showAnswer=true; corrEl.textContent=current().line; flash('Revealed'); });
+  $('#againBtn').addEventListener('click', () => next(true));
+  $('#goodBtn').addEventListener('click', () => next(false));
 
-// ---------- Event wiring ----------
-restore();
+  $('#flashReveal').addEventListener('click', () => { showAnswer=true; flashAnswer.textContent=current().line; flash('Revealed'); });
+  $('#flashAgain').addEventListener('click', () => next(true));
+  $('#flashGood').addEventListener('click', () => next(false));
 
-const linesInput = document.getElementById('linesInput');
-const modeSel = document.getElementById('mode');
-const shuffleSel = document.getElementById('shuffle');
-const targetInp = document.getElementById('targetAcc');
+  $('#clozeCheck').addEventListener('click', () => {
+    const c = current();
+    const s = sim(clozeInput.value, c.line);
+    total++;
+    if (s >= 0.88) { correct++; flash(`✓ ${Math.round(s*100)}%`, 'ok'); next(false); }
+    else { flash(`✗ ${Math.round(s*100)}%`, 'bad'); showAnswer=true; clozeMasked.textContent = c.line; }
+  });
+  $('#clozeReveal').addEventListener('click', () => { showAnswer=true; clozeMasked.textContent=current().line; flash('Revealed'); });
+  $('#clozeAgain').addEventListener('click', () => next(true));
+  $('#clozeGood').addEventListener('click', () => next(false));
 
-modeSel.addEventListener('change', ()=>{ mode = modeSel.value; showCard(); updatePills(); });
-shuffleSel.addEventListener('change', ()=>{ /* handled on start */ });
+  speakBtn.addEventListener('click', () => speak(current().line));
 
-document.getElementById('startBtn').addEventListener('click', ()=>{
-  const parsed = parseInput(linesInput.value);
-  if(parsed.length){ cards = parsed; if(shuffleSel.value==='on') shuffle(cards); idx=0; correct=0; total=0; targetAcc = Math.min(1, Math.max(.8, (+targetInp.value||92)/100)); persist(); showAnswer=false; mode=modeSel.value; showCard(); flash('Started!', 'ok'); }
-});
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' && modeSel.value==='type') { e.preventDefault(); $('#checkBtn').click(); }
+    if (e.code === 'Space') { e.preventDefault(); $('#revealBtn').click(); }
+    if (e.key.toLowerCase() === 'a') { $('#againBtn').click(); }
+    if (e.key.toLowerCase() === 'g') { $('#goodBtn').click(); }
+  });
 
-document.getElementById('revealBtn').addEventListener('click', ()=>{
-  if(mode==='listen'){ speak(cards[idx]?.line||''); }
-  if(mode==='flash' || mode==='cloze'){ showAnswer = !showAnswer; if(showAnswer && mode==='listen'){ speak(cards[idx].line); } showCard(); }
-});
+  modeSel.addEventListener('change', () => { showAnswer=false; persist(); showCard(); });
 
-document.getElementById('againBtn').addEventListener('click', ()=> nextCard(true));
+  // --------- Import / Export ---------
+  // FILE IMPORT (this fixes your issue)
+  const imp = document.getElementById('importFile');
+  imp.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const txt = await f.text();
+    try {
+      const arr = JSON.parse(txt);
+      if (!Array.isArray(arr)) throw new Error('Not an array');
+      // Normalize {cue,line}
+      cards = arr.map(x => ({ cue: String(x.cue||''), line: String(x.line||'') }))
+                 .filter(x => x.line.trim().length > 0);
+      idx = 0; correct = 0; total = 0; showAnswer = false;
+      persist();
+      flash(`Imported ${cards.length} cards ✓`, 'ok');
+      showCard();
+    } catch {
+      flash('Invalid JSON', 'bad');
+    }
+    // clear file input so the same file can be re-imported if needed
+    e.target.value = '';
+  });
 
-document.getElementById('goodBtn').addEventListener('click', ()=> nextCard(false));
+  // Export current deck
+  $('#exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(cards, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'comfort_lines_export.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 
-document.getElementById('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); checkTyped(); }});
+  // Load from paste
+  $('#loadFromPaste').addEventListener('click', ()=>{
+    const raw = $('#pasteBox').value.trim();
+    if (!raw) { flash('Nothing to load'); return; }
+    const lines = raw.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    const arr = [];
+    for (const ln of lines) {
+      const m = ln.split('::');
+      if (m.length >= 2) {
+        const cue = m[0].trim();
+        const line = m.slice(1).join('::').trim();
+        if (line) arr.push({cue, line});
+      }
+    }
+    if (arr.length===0) { flash('No valid “cue :: line” pairs','bad'); return; }
+    cards = arr; idx=0; correct=0; total=0; showAnswer=false;
+    persist();
+    flash(`Loaded ${cards.length} from paste ✓`, 'ok');
+    showCard();
+  });
 
-document.getElementById('speakBtn').addEventListener('click', ()=> speak(cards[idx]?.line||''));
+  $('#clearAll').addEventListener('click', ()=>{
+    cards = []; idx=0; correct=0; total=0; showAnswer=false;
+    persist();
+    showCard();
+  });
 
-document.getElementById('saveSet').addEventListener('click', ()=>{ persist(); flash('Saved locally ✓','ok'); });
+  // --------- Boot ---------
+  restore();
+  showCard();
 
-document.getElementById('exportSet').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(cards, null, 2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='comfort_lines.json'; a.click(); URL.revokeObjectURL(a.href);
-});
-
-const imp = document.getElementById('importFile');
-imp.addEventListener('change', async (e)=>{
-  const f = e.target.files?.[0]; if(!f) return; const txt = await f.text(); try{ cards = JSON.parse(txt); idx=0; showCard(); persist(); flash('Imported ✓','ok'); }catch{ flash('Invalid JSON','bad'); }
-});
-
-document.getElementById('resetStats').addEventListener('click', ()=>{ correct=0; total=0; updatePills(); flash('Stats reset','ok'); });
-
-document.getElementById('loadSample').addEventListener('click', loadSample);
-
-// Keyboard shortcuts
-window.addEventListener('keydown', (e)=>{
-  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
-    if(e.key===' ' && mode!=='type'){ e.preventDefault(); document.getElementById('revealBtn').click(); }
-    return;
+  // If no deck, show a tiny demo card so page isn’t empty
+  if (cards.length===0) {
+    cards = [{ cue:'Demo cue: I have felt…', line:'I have felt naught but joy these seventeen years!' }];
+    idx=0; correct=0; total=0; showAnswer=false;
+    showCard();
   }
-  if(e.key===' '){ e.preventDefault(); document.getElementById('revealBtn').click(); }
-  if(e.key.toLowerCase()==='a') document.getElementById('againBtn').click();
-  if(e.key.toLowerCase()==='g') document.getElementById('goodBtn').click();
-  if(e.key.toLowerCase()==='s') document.getElementById('speakBtn').click();
-});
-
-// Preload a tiny sample
-if(!localStorage.getItem('comfort_cards')) loadSample();
+})();
 </script>
 </body>
 </html>
