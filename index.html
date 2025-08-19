@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Comfort Cross — Lines Trainer</title>
+  <style>
+    :root {
+      --bg: #0b1020; --card:#0f1530; --ink:#e6ecff; --muted:#9fb0ff; --accent:#8be9fd; --ok:#86efac; --warn:#fde047; --bad:#fca5a5;
+    }
+    *{box-sizing:border-box}
+    body {margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#0b1020,#0b1228 40%,#0b1020); color:var(--ink)}
+    header{padding:18px 20px; display:flex; gap:14px; align-items:center; justify-content:space-between; border-bottom:1px solid #223}
+    .title{font-weight:800; letter-spacing:.5px}
+    .wrap{max-width:980px; margin:0 auto; padding:18px}
+    .row{display:flex; gap:16px; flex-wrap:wrap}
+    .card{background:var(--card); border:1px solid #22344a; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h2{margin:0 0 10px; font-size:18px; color:var(--muted)}
+    .controls .card{flex:1 1 280px}
+    .trainer{margin-top:18px}
+    textarea, input[type="text"], input[type="number"], button, select {width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a3558; background:#0b1228; color:var(--ink)}
+    textarea{min-height:120px; font-size:14px}
+    button{cursor:pointer; font-weight:700; transition:.15s transform ease, .15s background ease}
+    button:hover{transform:translateY(-1px)}
+    .btn-row{display:flex; gap:10px; flex-wrap:wrap}
+    .bigline{min-height:140px; white-space:pre-wrap; font-size:18px; line-height:1.55; background:#0a1024; padding:18px; border-radius:14px}
+    .cue{color:var(--muted); font-size:14px}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #2a3558; border-radius:999px; font-size:12px; color:var(--muted)}
+    .score{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .score .pill.ok{border-color:#1f3; color:var(--ok)}
+    .score .pill.bad{border-color:#933; color:var(--bad)}
+    .meter{height:10px; background:#101634; border-radius:999px; overflow:hidden; border:1px solid #243}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg,#60a5fa,#22d3ee); transition:width .25s ease}
+    .small{font-size:12px; color:#b7c3ff}
+    .hint{color:#c7d2fe}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0b1228; border:1px solid #2a3558; padding:3px 6px; border-radius:8px}
+    .footer{opacity:.7; font-size:12px; padding:20px; text-align:center}
+    .flex{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">Comfort Cross — Lines Trainer</div>
+    <div class="score">
+      <span class="pill" id="modePill">Mode: Flashcard</span>
+      <span class="pill" id="progressPill">0 / 0</span>
+      <span class="pill ok" id="accPill">Accuracy — 100%</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="row controls">
+      <div class="card" style="flex:2 1 420px">
+        <h2>1) Paste or import your Comfort Cross lines</h2>
+        <p class="small">Format: one card per line. Use <strong>cue :: line</strong>. (Cue can be a few prompt words, the line before yours, or a memory anchor.)</p>
+        <textarea id="linesInput"></textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button id="loadSample">Load sample</button>
+          <button id="saveSet">Save set</button>
+          <button id="exportSet">Export JSON</button>
+          <input type="file" id="importFile" accept="application/json" style="width:auto">
+        </div>
+      </div>
+      <div class="card" style="flex:1 1 260px">
+        <h2>2) Choose mode & options</h2>
+        <label class="small">Study mode</label>
+        <select id="mode">
+          <option value="flash">Flashcard (show → recall)</option>
+          <option value="type">Type-to-Check (fuzzy)</option>
+          <option value="cloze">Cloze (hide 20% of words)</option>
+          <option value="listen">Listen & Repeat (TTS)</option>
+        </select>
+        <label class="small" style="margin-top:10px; display:block">Shuffle</label>
+        <select id="shuffle">
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
+        <label class="small" style="margin-top:10px; display:block">Target accuracy before next</label>
+        <input type="number" id="targetAcc" min="80" max="100" value="92" />
+        <div class="btn-row" style="margin-top:10px">
+          <button id="startBtn">Start Training</button>
+          <button id="resetStats">Reset Stats</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="trainer card">
+      <h2>Trainer</h2>
+      <div class="cue" id="cueText">Load a set and press Start.</div>
+      <div id="lineBox" class="bigline" aria-live="polite"></div>
+
+      <div id="typeWrap" style="margin-top:12px; display:none">
+        <input type="text" id="typeInput" placeholder="Type your line here and press Enter…" />
+      </div>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button id="revealBtn">Reveal / Next</button>
+        <button id="againBtn">Again</button>
+        <button id="goodBtn">Good</button>
+        <button id="speakBtn">🔊 Speak</button>
+      </div>
+
+      <div class="flex" style="margin-top:10px">
+        <div style="flex:1">
+          <div class="meter"><div class="bar" id="accBar"></div></div>
+        </div>
+        <div class="small hint">Hints: <span class="kbd">Space</span> reveal • <span class="kbd">Enter</span> submit • <span class="kbd">A</span>/<span class="kbd">G</span> again/good • <span class="kbd">S</span> speak</div>
+      </div>
+    </section>
+
+    <div class="footer">Single-file tool — drop into a GitHub Pages repo and go. • Your data is saved locally in your browser.</div>
+  </main>
+
+<script>
+// ---------- Utilities ----------
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+function levenshtein(a,b){ // iterative DP
+  a=a.toLowerCase(); b=b.toLowerCase();
+  const m=a.length, n=b.length; const dp=new Array(n+1);
+  for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0]; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const temp=dp[j];
+      const cost = a[i-1]===b[j-1]?0:1;
+      dp[j] = Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
+      prev=temp;
+    }
+  }
+  return dp[n];
+}
+function wordCloze(text, hideRatio=.2){
+  const words=text.split(/(\s+)/); // keep spaces
+  const realIdx = words.map((w,i)=>(/\w/.test(w)?i:null)).filter(i=>i!=null);
+  const toHide = Math.max(1, Math.floor(realIdx.length*hideRatio));
+  const hidden = new Set(shuffle([...realIdx]).slice(0,toHide));
+  return words.map((w,i)=> hidden.has(i) && /\w/.test(w)? "_".repeat(Math.min(8,w.length)) : w).join("");
+}
+function speak(text){
+  const u = new SpeechSynthesisUtterance(text); u.rate=1.0; u.pitch=1.0; u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+// ---------- Data ----------
+let cards = [];
+let idx = 0; let correct=0, total=0; let targetAcc = 0.92; let mode='flash'; let showAnswer=false;
+
+function parseInput(raw){
+  return raw.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(line=>{
+    const [cue, ...rest] = line.split("::");
+    return {cue: (cue||'Cue').trim(), line: rest.join('::').trim()};
+  }).filter(o=>o.line);
+}
+
+function loadSample(){
+  const sample = [
+    "Audience sees Comfort :: Oh come now, it’s not so serious as all that! Be well my children, and may the Spirit breathe its blessing on you all! My name is Comfort Cross… rejoice that at last, he, and you, and all of us, may be made new! Oh blessed, blessed are we all!",
+    "Erasmus asks about pain :: I have felt naught but joy these seventeen years! Joy that at last, I have found true salvation…",
+    "Display of decay vs joy :: Yet the more and more—and MORE—my flesh fail me, the more I feel my spirit flying free as a prairie wind!",
+    "Locust terror :: When I was a little girl, I witnessed countless lives destroyed by these dread devourers… You’d find them everywhere… oh, how they made it so one could never feel quite clean!",
+    "Father Winfried :: He was a preacher… called the farmers together… Comfort first among them… said I possessed a certain frailty… but I always knowed I was afflicted of something divine.",
+    "Croatan Sound :: I came to the shores of Croatan Sound… angels’ song all around… the willow, mightier and older than stone… I knowed it was to be my ministry.",
+    "Offer of the flesh :: Behold the holy relic! It was with my lung I first breathed the pure, true breath of the Spirit… Would you be joined with me?",
+    "Cosmic vision :: I walked to the sun… descended to the profane necropolis… kissed the shells of dead stars… all is innocence! Sin and salvation, death and life, all is one!",
+    "To Erasmus — release pain :: My child, you want to know what it feels like? To be free from pain?",
+  ].join("\n");
+  document.getElementById('linesInput').value = sample;
+}
+
+function persist(){
+  localStorage.setItem('comfort_cards', JSON.stringify(cards));
+}
+function restore(){
+  const raw = localStorage.getItem('comfort_cards');
+  if(raw){ try{ cards = JSON.parse(raw);}catch{cards=[]} }
+  updatePills();
+}
+
+// ---------- Trainer ----------
+function updatePills(){
+  document.getElementById('progressPill').textContent = `${cards.length?idx+1:0} / ${cards.length}`;
+  const acc = total? Math.round(100*correct/total):100;
+  document.getElementById('accPill').textContent = `Accuracy — ${acc}%`;
+  document.getElementById('accBar').style.width = `${acc}%`;
+  document.getElementById('modePill').textContent = `Mode: ${{
+    flash:'Flashcard', type:'Type', cloze:'Cloze', listen:'Listen'
+  }[mode]}`;
+}
+function showCard(){
+  if(!cards.length){document.getElementById('cueText').textContent='Load a set and press Start.'; document.getElementById('lineBox').textContent=''; return}
+  const c = cards[idx];
+  document.getElementById('cueText').textContent = `Cue: ${c.cue}`;
+  const box = document.getElementById('lineBox');
+  if(mode==='flash' || mode==='listen'){
+    box.textContent = showAnswer? c.line : '✧ Press Reveal to show the line';
+  } else if(mode==='type'){
+    box.textContent = 'Type the full line below and press Enter';
+  } else if(mode==='cloze'){
+    box.textContent = showAnswer? c.line : wordCloze(c.line, .22);
+  }
+  document.getElementById('typeWrap').style.display = (mode==='type')? 'block':'none';
+  updatePills();
+}
+function nextCard(again=false){
+  if(again){ // simple spaced repetition: reinsert a few ahead
+    const c = cards.splice(idx,1)[0];
+    const pos = Math.min(cards.length, idx + 3 + Math.floor(Math.random()*3));
+    cards.splice(pos,0,c);
+  } else {
+    idx = (idx+1) % cards.length;
+  }
+  showAnswer=false; showCard();
+}
+
+function checkTyped(){
+  const input = document.getElementById('typeInput');
+  const guess = (input.value||'').trim(); const target = cards[idx].line.trim();
+  if(!guess){return}
+  total++;
+  const dist = levenshtein(guess, target);
+  const maxLen = Math.max(guess.length, target.length);
+  const similarity = 1 - (dist / Math.max(1,maxLen));
+  const ok = similarity >= targetAcc;
+  if(ok){ correct++; flash('Great! ✓', 'ok'); nextCard(false); }
+  else { flash(`Close… ${(similarity*100|0)}%`, 'bad'); nextCard(true); }
+  input.value=''; updatePills();
+}
+function flash(msg, kind='ok'){
+  const pill = document.createElement('div'); pill.className='pill '+(kind==='ok'?'ok':'bad'); pill.textContent=msg; pill.style.position='fixed'; pill.style.bottom='18px'; pill.style.right='18px'; pill.style.zIndex=50; document.body.appendChild(pill);
+  setTimeout(()=> pill.remove(), 1200);
+}
+
+// ---------- Event wiring ----------
+restore();
+
+const linesInput = document.getElementById('linesInput');
+const modeSel = document.getElementById('mode');
+const shuffleSel = document.getElementById('shuffle');
+const targetInp = document.getElementById('targetAcc');
+
+modeSel.addEventListener('change', ()=>{ mode = modeSel.value; showCard(); updatePills(); });
+shuffleSel.addEventListener('change', ()=>{ /* handled on start */ });
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  const parsed = parseInput(linesInput.value);
+  if(parsed.length){ cards = parsed; if(shuffleSel.value==='on') shuffle(cards); idx=0; correct=0; total=0; targetAcc = Math.min(1, Math.max(.8, (+targetInp.value||92)/100)); persist(); showAnswer=false; mode=modeSel.value; showCard(); flash('Started!', 'ok'); }
+});
+
+document.getElementById('revealBtn').addEventListener('click', ()=>{
+  if(mode==='listen'){ speak(cards[idx]?.line||''); }
+  if(mode==='flash' || mode==='cloze'){ showAnswer = !showAnswer; if(showAnswer && mode==='listen'){ speak(cards[idx].line); } showCard(); }
+});
+
+document.getElementById('againBtn').addEventListener('click', ()=> nextCard(true));
+
+document.getElementById('goodBtn').addEventListener('click', ()=> nextCard(false));
+
+document.getElementById('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); checkTyped(); }});
+
+document.getElementById('speakBtn').addEventListener('click', ()=> speak(cards[idx]?.line||''));
+
+document.getElementById('saveSet').addEventListener('click', ()=>{ persist(); flash('Saved locally ✓','ok'); });
+
+document.getElementById('exportSet').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(cards, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='comfort_lines.json'; a.click(); URL.revokeObjectURL(a.href);
+});
+
+const imp = document.getElementById('importFile');
+imp.addEventListener('change', async (e)=>{
+  const f = e.target.files?.[0]; if(!f) return; const txt = await f.text(); try{ cards = JSON.parse(txt); idx=0; showCard(); persist(); flash('Imported ✓','ok'); }catch{ flash('Invalid JSON','bad'); }
+});
+
+document.getElementById('resetStats').addEventListener('click', ()=>{ correct=0; total=0; updatePills(); flash('Stats reset','ok'); });
+
+document.getElementById('loadSample').addEventListener('click', loadSample);
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
+    if(e.key===' ' && mode!=='type'){ e.preventDefault(); document.getElementById('revealBtn').click(); }
+    return;
+  }
+  if(e.key===' '){ e.preventDefault(); document.getElementById('revealBtn').click(); }
+  if(e.key.toLowerCase()==='a') document.getElementById('againBtn').click();
+  if(e.key.toLowerCase()==='g') document.getElementById('goodBtn').click();
+  if(e.key.toLowerCase()==='s') document.getElementById('speakBtn').click();
+});
+
+// Preload a tiny sample
+if(!localStorage.getItem('comfort_cards')) loadSample();
+</script>
+</body>
+</html>
